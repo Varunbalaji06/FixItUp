@@ -18,10 +18,40 @@ namespace FixItUp.Data
         public DbSet<Bid> Bids { get; set; }
         public DbSet<Dispute> Disputes { get; set; }
         public DbSet<TaskChecklistItem> TaskChecklistItems { get; set; }
+        public DbSet<ServiceCategory> ServiceCategories { get; set; }
+        public DbSet<WorkerSkill> WorkerSkills { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // ======================
+            // SKILLS CONFIGURATION
+            // ======================
+            modelBuilder.Entity<WorkerSkill>()
+                .HasKey(ws => new { ws.UserId, ws.CategoryId });
+
+            modelBuilder.Entity<WorkerSkill>()
+                .HasOne(ws => ws.User)
+                .WithMany(u => u.SpecializedSkills)
+                .HasForeignKey(ws => ws.UserId);
+
+            modelBuilder.Entity<WorkerSkill>()
+                .HasOne(ws => ws.Category)
+                .WithMany()
+                .HasForeignKey(ws => ws.CategoryId);
+
+            // Seed Categories
+            modelBuilder.Entity<ServiceCategory>().HasData(
+                new ServiceCategory { Id = 1, Name = "Plumbing" },
+                new ServiceCategory { Id = 2, Name = "Electrical" },
+                new ServiceCategory { Id = 3, Name = "Carpentry" },
+                new ServiceCategory { Id = 4, Name = "Painting" },
+                new ServiceCategory { Id = 5, Name = "Assembly" },
+                new ServiceCategory { Id = 6, Name = "Cleaning" },
+                new ServiceCategory { Id = 7, Name = "Maintenance" },
+                new ServiceCategory { Id = 8, Name = "Moving" }
+            );
 
             // ======================
             // USER CONFIGURATION
@@ -44,6 +74,22 @@ namespace FixItUp.Data
                 entity.Property(u => u.PendingClearance)
                       .HasPrecision(18, 2)
                       .HasDefaultValue(0);
+            });
+
+            // Seed Admin User
+            modelBuilder.Entity<User>().HasData(new User
+            {
+                Id = 999, // Static ID for Admin
+                FullName = "System Administrator",
+                Email = "admin@fixitup.com",
+                PasswordHash = "admin123", // Plain text for demo; in production use hashing
+                Role = "Admin",
+                IsAcceptingJobs = false,
+                TrustScore = 100,
+                IsVerifiedPro = true,
+                JobCompletionRate = 0,
+                AvailableBalance = 0,
+                PendingClearance = 0
             });
 
             // ======================
